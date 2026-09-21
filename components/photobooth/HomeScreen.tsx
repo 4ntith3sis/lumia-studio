@@ -31,7 +31,7 @@ export default function HomeScreen() {
 
           <div className="illustration-card-frame">
             <Image
-              src="/design-assets/assets/home_illustration.jpg"
+              src="/images/home_illustration.jpg"
               alt="Lumia Photobooth Illustration"
               fill
               className="illustration-img"

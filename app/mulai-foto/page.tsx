@@ -1,4 +1,4 @@
-import PrepareScreen from '@/components/screens/PrepareScreen';
+import PrepareScreen from '@/components/photobooth/PrepareScreen';
 
 export const metadata = {
   title: 'Lumia Photobooth — Persiapan Foto',

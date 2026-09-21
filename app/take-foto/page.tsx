@@ -1,4 +1,4 @@
-import TakePhotoScreen from '@/components/screens/TakePhotoScreen';
+import TakePhotoScreen from '@/components/photobooth/TakePhotoScreen';
 
 export const metadata = {
   title: 'Lumia Photobooth — Ambil Foto',

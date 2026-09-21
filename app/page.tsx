@@ -1,4 +1,4 @@
-import HomeScreen from '@/components/screens/HomeScreen';
+import HomeScreen from '@/components/photobooth/HomeScreen';
 
 export const metadata = {
   title: 'Lumia Photobooth — More Than Just Photos, It\'s A Memory',

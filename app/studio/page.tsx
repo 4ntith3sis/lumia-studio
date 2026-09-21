@@ -1,4 +1,4 @@
-import StudioScreen from '@/components/screens/StudioScreen';
+import StudioScreen from '@/components/photobooth/StudioScreen';
 
 export const metadata = {
   title: 'Lumia Photobooth — Studio Frame & Filter',

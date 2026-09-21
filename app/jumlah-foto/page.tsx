@@ -1,4 +1,4 @@
-import ChooseCountScreen from '@/components/screens/ChooseCountScreen';
+import ChooseCountScreen from '@/components/photobooth/ChooseCountScreen';
 
 export const metadata = {
   title: 'Lumia Photobooth — Pilih Jumlah Foto',

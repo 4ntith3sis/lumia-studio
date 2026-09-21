@@ -1,4 +1,4 @@
-import DownloadFinalScreen from '@/components/screens/DownloadFinalScreen';
+import DownloadFinalScreen from '@/components/photobooth/DownloadFinalScreen';
 
 export const metadata = {
   title: 'Lumia Photobooth — Hasil Akhir',
