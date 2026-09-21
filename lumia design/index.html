@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Lumia Photobooth — More Than Just Photos, It's A Memory</title>
+
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Organic Background Wave Graphics (Matching exact reference screenshot) -->
+  <svg class="bg-blob-top-right" viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M380 0H120C150 70 200 120 280 140C360 160 400 240 400 320V0H380Z" fill="#FF5232" opacity="0.85"/>
+    <path d="M400 0H200C240 50 280 80 340 100C400 120 400 200 400 200V0Z" fill="#FF85A1" opacity="0.9"/>
+    <path d="M400 0H280C310 30 350 50 400 60V0Z" fill="#FFB800"/>
+  </svg>
+
+  <svg class="bg-blob-bottom-left" viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M0 400V120C70 150 120 200 140 280C160 360 240 400 320 400H0Z" fill="#FF5232" opacity="0.85"/>
+    <path d="M0 400V200C50 240 80 280 100 340C120 400 200 400 200 400H0Z" fill="#FFB800"/>
+  </svg>
+
+  <div id="app-root">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="brand-logo">
+        lumia<span class="logo-dot">.</span>
+      </div>
+    </header>
+
+    <!-- Main Container (Page 1 Home) -->
+    <main class="screen-container">
+      <section class="screen-page active">
+        <div class="content-wrapper">
+          <div class="home-hero">
+            <!-- Left Content -->
+            <div class="home-hero-text">
+              <h1 class="home-title">More Than Just<br>Photos, It's A<br>Memory</h1>
+              <p class="home-desc">Bikin momen seru jadi tak terlupakan bersama Lumia!</p>
+              <a href="jumlah_foto.html" class="btn-primary">
+                Mulai
+              </a>
+            </div>
+
+            <!-- Right Visual Frame Box & Badges -->
+            <div class="home-illustration-container">
+              <span class="spark-star star-1">✦</span>
+              <span class="spark-star star-2">★</span>
+
+              <div class="badge-tag badge-lumia-top">Lumia Photobooth</div>
+              <div class="badge-tag badge-seru">Photobooth Seru</div>
+              <div class="badge-tag badge-instan">Cepat Instan</div>
+              <div class="badge-tag badge-kreatif">Kreatif</div>
+
+              <div class="illustration-card-frame">
+                <img src="assets/home_illustration.jpg" alt="Lumia Photobooth Illustration" class="illustration-img">
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+</body>
+</html>
