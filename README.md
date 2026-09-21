@@ -1,36 +1,151 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Lumia Photobooth
 
-## Getting Started
+Photobooth web app berbasis Next.js + Supabase. User dapat mengambil foto via kamera, memilih frame dan filter, lalu mengunduh hasil akhir dalam format PNG atau boomerang (WebM).
 
-First, run the development server:
+## Tech Stack
+
+- **Framework:** Next.js 14 (App Router)
+- **Language:** TypeScript
+- **Styling:** Tailwind CSS v4 + custom CSS variables
+- **Database & Auth:** Supabase (PostgreSQL + RLS)
+- **Storage:** Supabase Storage (`frame-images` bucket, PNG only, max 5 MB)
+- **Kamera:** MediaDevices API (`getUserMedia`)
+
+## Fitur Utama
+
+| Fitur | Detail |
+|-------|--------|
+| Pilih jumlah foto | 2, 3, 4, atau 6 pose |
+| Kamera & countdown | Mirror selfie, 3-2-1 countdown, capture otomatis |
+| Review hasil | Galeri foto asli sebelum masuk Studio |
+| Studio editor | Drag, zoom, reset per slot; pilih frame overlay & filter efek |
+| Filter effects | 7 built-in preset + custom effects dari Admin panel |
+| Export | Download original JPEG, framed composite PNG, boomerang WebM |
+| Admin panel | CRUD frames (upload PNG) & effects (slider pengaturan) |
+| Session management | Semua state di `sessionStorage`, aman saat refresh |
+
+## Alur Pengguna
+
+```
+/                    → Home
+/jumlah-foto         → Pilih jumlah foto (2/3/4/6)
+/mulai-foto          → Persiapan sebelum kamera
+/take-foto           → Kamera live + countdown + capture
+/hasil-foto          → Review hasil foto
+/studio              → Pilih frame & filter, atur posisi/zoom
+/hasil-akhir         → Download hasil final
+/admin               → Admin dashboard (butuh login)
+/admin/login         → Autentikasi admin
+/admin/frames        → Kelola semua kategori frame
+/admin/effects       → Kelola effects / filter
+```
+
+## Instalasi
+
+### 1. Clone & install dependencies
+
+```bash
+git clone https://github.com/4ntith3sis/lumia-studio.git
+cd lumia-studio
+npm install
+```
+
+### 2. Setup Supabase
+
+Buat project baru di [Supabase Dashboard](https://supabase.com), lalu jalankan migration SQL berikut di **SQL Editor**:
+
+```
+sql/001_initial_migration.sql   — tabel profiles, frames, RLS policies, storage bucket
+sql/002_effects_migration.sql   — tabel effects + 7 default effect preset
+sql/003_effects_settings_migration.sql  — tambah kolom settings JSONB ke tabel effects
+```
+
+### 3. Konfigurasi environment
+
+Salin template dan isi dengan kredensial Supabase kamu:
+
+```bash
+cp .env.example .env.local
+```
+
+Isi variabel berikut di `.env.local`:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+```
+
+### 4. Bootstrap admin (sekali saja)
+
+Jalankan script ini di terminal untuk membuat user admin pertama:
+
+```bash
+npm run bootstrap:admin
+```
+
+Ikuti petunjuk di terminal untuk memasukkan email dan password admin.
+
+### 5. Seed dummy frames (opsional)
+
+Untuk testing cepat, tambahkan frame contoh:
+
+```bash
+npm run seed:dummy-frames
+```
+
+### 6. Jalankan development server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Buka http://localhost:3000 di browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Script npm
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Perintah | Fungsi |
+|----------|--------|
+| `npm run dev` | Start development server (localhost:3000) |
+| `npm run build` | Build production |
+| `npm start` | Jalankan production build |
+| `npm run lint` | ESLint check |
+| `npm run bootstrap:admin` | Buat user admin pertama di Supabase |
+| `npm run seed:dummy-frames` | Isi database dengan frame contoh |
 
-## Learn More
+## Struktur Project
 
-To learn more about Next.js, take a look at the following resources:
+```
+app/                  # Next.js App Router pages
+  page.tsx            # Home
+  studio/page.tsx     # Editor frame & filter
+  take-foto/page.tsx  # Kamera
+  ...
+components/
+  screens/            # Screen components (HomeScreen, StudioScreen, dll)
+  studio/             # StudioCanvas, EffectThumbnail
+  admin/              # AdminLayout, EffectSliderEditor, FrameManager
+  photobooth/         # FrameCard, FrameGallery
+lib/
+  photobooth/         # Camera, capture, compositing, export, session, effect utils
+  services/           # Supabase service layer (effects, frames)
+  supabase/           # Client & server Supabase client setup
+types/                # TypeScript type definitions
+sql/                  # Database migration scripts (tidak di-commit ke git)
+public/
+  design-assets/      # Asset statis (illustrasi)
+scripts/              # Bootstrap & seed utilities
+.env.example          # Template environment variables
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Kontribusi
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. Fork repository
+2. Buat branch fitur (`git checkout -b feature/nama-fitur`)
+3. Commit perubahan (`git commit -m 'feat: deskripsi'`)
+4. Push ke branch (`git push origin feature/nama-fitur`)
+5. Buka Pull Request
 
-## Deploy on Vercel
+## Lisensi
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Private project — semua hak dilindungi.

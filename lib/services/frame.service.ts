@@ -38,19 +38,6 @@ async function requireAdminClient(): Promise<SupabaseClient> {
 
 /* ─── Frame Service ─────────────────────────────────────── */
 
-export async function getActiveFrames(): Promise<Frame[]> {
-  const supabase = requireClient();
-  const { data, error } = await supabase
-    .from('frames')
-    .select('*')
-    .eq('is_active', true)
-    .order('photo_count', { ascending: true })
-    .order('name', { ascending: true });
-
-  if (error) throw new Error(`Failed to fetch frames: ${error.message}`);
-  return (data ?? []) as Frame[];
-}
-
 export async function getFramesByPhotoCount(count: ValidPhotoCount): Promise<Frame[]> {
   const supabase = requireClient();
   const { data, error } = await supabase

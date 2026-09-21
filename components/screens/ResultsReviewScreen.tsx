@@ -49,7 +49,7 @@ export default function ResultsReviewScreen() {
 
       {loading ? (
         <div className="results-gallery-grid" aria-busy="true" aria-label="Memuat foto">
-          {Array.from({ length: 4 }, (_, i) => (
+          {Array.from({ length: total ?? 4 }, (_, i) => (
             <div key={i} className="result-card-item" style={{ background: 'var(--color-bg-main)' }} />
           ))}
         </div>

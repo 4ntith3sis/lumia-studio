@@ -71,18 +71,6 @@ export async function getAllEffects(): Promise<Effect[]> {
   return (data ?? []).map(sanitizeEffect);
 }
 
-export async function getEffectById(id: string): Promise<Effect | null> {
-  const supabase = await requireAdminClient();
-  const { data, error } = await supabase
-    .from('effects')
-    .select('*')
-    .eq('id', id)
-    .single();
-
-  if (error) throw new Error(`Failed to fetch effect: ${error.message}`);
-  return data ? sanitizeEffect(data) : null;
-}
-
 export async function createEffect(input: EffectInsert): Promise<Effect> {
   const supabase = await requireAdminClient();
   const settings = input.settings ?? validateEffectSettings({});
