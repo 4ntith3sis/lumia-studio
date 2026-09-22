@@ -86,8 +86,8 @@ body {
 /* App Container */
 .app-root {
   width: 100vw;
+  height: 100dvh;
   height: 100vh;
-  height: 100svh;
   display: flex;
   flex-direction: column;
   position: relative;
@@ -151,8 +151,8 @@ body {
   flex: 1;
   position: relative;
   width: 100%;
+  height: calc(100dvh - 4.5rem);
   height: calc(100vh - 4.5rem);
-  height: calc(100svh - 4.5rem);
   overflow: hidden;
 }
 
@@ -1436,8 +1436,8 @@ body {
 .admin-shell {
   display: flex;
   width: 100%;
+  height: 100dvh;
   height: 100vh;
-  height: 100svh;
   background: var(--color-bg-main);
   overflow: hidden;
 }
@@ -1449,8 +1449,8 @@ body {
   border-right: 3px solid var(--color-border-dark);
   display: flex;
   flex-direction: column;
+  height: 100dvh;
   height: 100vh;
-  height: 100svh;
   z-index: 200;
 }
 
@@ -1677,80 +1677,217 @@ a.admin-stat-card:hover {
   color: var(--color-accent-primary);
 }
 
-@media (max-width: 900px) {
-  .guide-steps-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  .download-cards-grid {
-    grid-template-columns: 1fr;
-  }
-  .home-hero {
-    grid-template-columns: 1fr;
-    text-align: center;
-  }
-  .home-desc { margin-left: auto; margin-right: auto; }
-  .count-grid { grid-template-columns: repeat(2, 1fr); }
-  .camera-layout { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
-  .camera-thumbnails-sidebar { flex-direction: row; height: 64px; padding: 0.5rem; gap: 0.5rem; }
-  .thumb-slot { width: 64px; height: 48px; }
-  /* Studio: gunakan persentase agar canvas menyesuaikan tinggi layar */
-  .studio-layout { grid-template-columns: 1fr; grid-template-rows: minmax(180px, 2fr) 1fr; }
-  .studio-preview-wrapper { max-height: none; padding: 0.75rem; }
-  .studio-controls-panel { max-height: none; padding: 1rem; gap: 0.75rem; }
-  .studio-tab-btn { padding: 0.5rem 0.75rem; font-size: 0.8rem; }
-  .options-grid { gap: 0.5rem; }
-  .option-card { padding: 0.4rem; }
-  .option-title { font-size: 0.65rem; }
-  .frame-gallery { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
-  .frame-actions { flex-wrap: wrap; }
-  .admin-sidebar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    transform: translateX(-105%);
-    transition: transform 0.25s ease;
-    box-shadow: var(--shadow-pop-lg);
-  }
-  .admin-sidebar.open {
-    transform: translateX(0);
-  }
-  .admin-topbar { display: flex; }
-  .admin-overlay {
-    display: block;
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.45);
-    z-index: 150;
-    border: none;
-    padding: 0;
-    cursor: pointer;
-  }
+/* ─── Responsive: Tablet (≤ 1024px) ─── */
+@media (max-width: 1024px) {
+  .screen-container { padding: clamp(0.75rem, 2vw, 1.5rem); }
+  .content-wrapper { gap: clamp(0.75rem, 2vw, 1.25rem); }
+
+  /* Home */
+  .home-hero { gap: clamp(1rem, 3vw, 2rem); }
+  .home-title { font-size: clamp(1.75rem, 4vw, 2.5rem); }
+  .home-desc { font-size: clamp(0.95rem, 2vw, 1.1rem); }
+  .home-illustration-container { max-width: 420px; }
+
+  /* Choose Count */
+  .count-grid { gap: clamp(0.75rem, 2vw, 1.25rem); max-width: 820px; }
+  .count-card { padding: clamp(1rem, 2.5vw, 1.5rem); }
+  .count-icon-box { width: 70px; height: 90px; }
+  .count-number { font-size: 1.15rem; }
+
+  /* Camera */
+  .camera-layout { max-width: 900px; }
+
+  /* Results Gallery */
+  .results-gallery-grid { max-width: 780px; gap: 1rem; }
+
+  /* Studio */
+  .studio-layout { max-width: 960px; gap: clamp(1rem, 2vw, 1.75rem); }
+  .studio-preview-wrapper { max-height: 460px; padding: 1rem; }
+  .studio-controls-panel { max-height: 460px; padding: 1.25rem; gap: 1rem; }
+  .studio-tab-btn { padding: 0.5rem 0.85rem; font-size: 0.8rem; }
+
+  /* Download */
+  .download-cards-grid { max-width: 900px; }
+  .download-preview-box { height: 150px; }
+  .download-card { padding: 1.25rem 1rem; }
+  .download-card-title { font-size: 1.1rem; }
+  .download-bottom-actions { gap: 1rem; }
+
+  /* Frame Gallery */
+  .frame-gallery { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: clamp(0.6rem, 2vw, 1rem); }
+
+  /* Admin */
+  .admin-content { padding: clamp(1rem, 2.5vw, 2rem); }
 }
 
-/* Extra-small screens (≤ 480px): compaction pass */
+/* ─── Responsive: Mobile (≤ 767px) ─── */
+@media (max-width: 767px) {
+  .screen-container { padding: 0.75rem; }
+  .content-wrapper { gap: 0.75rem; }
+  .app-header { padding: 0 1rem; height: 3.75rem; }
+  .brand-logo { font-size: 1.5rem; }
+
+  /* Home */
+  .home-hero { grid-template-columns: 1fr; text-align: center; gap: 1.25rem; }
+  .home-title { font-size: 1.75rem; }
+  .home-desc { font-size: 0.95rem; margin-bottom: 1.5rem; }
+  .home-illustration-container { max-width: 280px; }
+  .badge-lumia-top { font-size: 0.85rem; padding: 0.35rem 1rem; }
+  .badge-tag { font-size: 0.7rem; padding: 0.25rem 0.6rem; }
+  .spark-star { font-size: 1.1rem; }
+
+  /* Prepare */
+  .prep-card { padding: clamp(1.25rem, 4vw, 2rem); gap: 1.25rem; }
+  .prep-illustration { width: 80px; height: 80px; font-size: 2.25rem; }
+  .prep-item { font-size: 0.85rem; }
+
+  /* Choose Count */
+  .count-grid { grid-template-columns: repeat(2, 1fr); gap: 0.75rem; max-width: 380px; }
+  .count-card { padding: clamp(0.85rem, 3vw, 1.25rem); }
+  .count-icon-box { width: 60px; height: 78px; }
+  .count-number { font-size: 1rem; }
+  .count-desc { font-size: 0.7rem; }
+  .user-guide-container { padding: 0.75rem 1rem; }
+  .guide-steps-grid { grid-template-columns: 1fr; }
+  .guide-step-item { padding: 0.5rem 0.6rem; }
+
+  /* Camera */
+  .camera-layout { max-width: 100%; gap: 0.75rem; max-height: calc(100dvh - 3.75rem - 3rem); }
+  .camera-thumbnails-sidebar { flex-direction: row; height: 56px; padding: 0.5rem; gap: 0.4rem; }
+  .thumb-slot { width: 56px; height: 42px; }
+  .thumb-title { font-size: 0.65rem; }
+  .camera-viewport-card { border-width: 2px; border-radius: var(--radius-md); }
+  .hud-pill { font-size: 0.65rem; padding: 0.2rem 0.5rem; }
+  .pulse-dot { width: 6px; height: 6px; }
+  .camera-controls-bottom { bottom: 0.75rem; gap: 1rem; }
+  .btn-shutter { width: 3.25rem; height: 3.25rem; }
+  .btn-shutter-inner { width: 2.25rem; height: 2.25rem; }
+  .btn-secondary { font-size: 0.8rem; padding: 0.4rem 0.85rem; }
+  .capture-status { font-size: 0.75rem; padding: 0.3rem 0.75rem; }
+  .selected-frame-chip { font-size: 0.75rem; padding: 0.2rem 0.7rem 0.2rem 0.2rem; }
+  .selected-frame-chip img { width: 28px; height: 36px; }
+
+  /* Results Review */
+  .results-gallery-grid { grid-template-columns: repeat(2, 1fr); max-width: 380px; gap: 0.75rem; }
+  .result-card-item { border-width: 2px; }
+  .subtitle { font-size: 0.9rem; }
+  .title-primary { font-size: 1.5rem; }
+
+  /* Studio */
+  .studio-layout { max-width: 100%; gap: 0.75rem; max-height: calc(100dvh - 3.75rem - 2.5rem); }
+  .studio-preview-wrapper { max-height: none; flex: 1; min-height: 0; padding: 0.5rem; }
+  .studio-controls-panel { max-height: none; flex: 1; min-height: 0; padding: 0.75rem; gap: 0.6rem; }
+  .studio-tabs-nav { padding: 0.25rem; }
+  .studio-tab-btn { padding: 0.4rem 0.5rem; font-size: 0.75rem; }
+  .studio-tab-content { gap: 0.6rem; }
+  .options-grid { gap: 0.4rem; }
+  .option-card { padding: 0.3rem; gap: 0.3rem; }
+  .option-title { font-size: 0.6rem; }
+  .slot-controls { gap: 0.4rem; flex-wrap: wrap; justify-content: center; }
+  .slot-dots { gap: 0.25rem; }
+  .slot-dot { width: 24px; height: 24px; font-size: 0.7rem; }
+  .slot-zoom { gap: 0.25rem; }
+  .slot-btn { padding: 0.2rem 0.35rem !important; font-size: 0.75rem !important; min-width: 30px; }
+  .slot-btn.wide { font-size: 0.6rem !important; padding: 0.2rem 0.3rem !important; }
+  .slot-hint { font-size: 0.6rem; margin-top: 0.25rem; }
+  .frame-switch-error { font-size: 0.7rem; }
+  .admin-loading { font-size: 0.8rem; padding: 1.5rem 0; }
+  .frame-state-title { font-size: 0.95rem; }
+  .frame-state-desc { font-size: 0.8rem; }
+
+  /* Download */
+  .download-cards-grid { grid-template-columns: 1fr; gap: 0.75rem; max-width: 400px; }
+  .download-card { padding: 1rem 0.85rem; gap: 0.75rem; }
+  .download-preview-box { height: 130px; }
+  .raw-photos-row { gap: 4px; padding: 5px; }
+  .download-card-title { font-size: 1rem; }
+  .download-card-desc { font-size: 0.75rem; margin-top: 0; }
+  .btn-card-download { padding: 0.5rem 0.75rem; font-size: 0.8rem; }
+  .download-bottom-actions { flex-direction: column; gap: 0.5rem; }
+  .download-bottom-actions .btn-primary,
+  .download-bottom-actions .btn-secondary { width: 100%; justify-content: center; }
+
+  /* Frame actions */
+  .frame-actions { flex-direction: column; gap: 0.5rem; }
+  .frame-actions .btn-primary,
+  .frame-actions .btn-secondary { width: 100%; justify-content: center; }
+
+  /* Frame gallery */
+  .frame-gallery { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 0.5rem; }
+  .frame-card { padding: 0.5rem; }
+  .frame-name { font-size: 0.75rem; }
+  .frame-count-badge { font-size: 0.6rem; padding: 0.15rem 0.4rem; }
+
+  /* Admin */
+  .admin-content { padding: 0.75rem; }
+  .admin-title { font-size: 1.25rem; }
+  .admin-subtitle { font-size: 0.8rem; }
+  .admin-stat-grid { gap: 0.5rem; }
+  .admin-stat-card { padding: 0.75rem 0.5rem; }
+  .admin-stat-value { font-size: 1.5rem; }
+  .admin-stat-label { font-size: 0.7rem; }
+  .admin-cat-card { padding: 1rem 0.75rem; }
+  .admin-cat-count { font-size: 1.75rem; }
+  .admin-cat-name { font-size: 0.9rem; }
+  .admin-cat-desc { font-size: 0.7rem; }
+}
+
+/* ─── Responsive: Extra-small (≤ 480px) — additional compaction ─── */
 @media (max-width: 480px) {
   .screen-container { padding: 0.5rem; }
-  .content-wrapper { gap: 0.75rem; }
-  /* Camera: thumbnail strip lebih kecil */
-  .camera-thumbnails-sidebar { height: 56px; }
-  .thumb-slot { width: 56px; height: 42px; }
-  .hud-pill { font-size: 0.7rem; padding: 0.25rem 0.6rem; }
-  .btn-shutter { width: 3.5rem; height: 3.5rem; }
-  .btn-shutter-inner { width: 2.4rem; height: 2.4rem; }
-  /* Studio: canvas lebih ringkas, tombol zoom lebih kecil */
-  .studio-layout { grid-template-rows: minmax(160px, 2fr) 1fr; }
-  .studio-preview-wrapper { padding: 0.5rem; }
-  .studio-controls-panel { padding: 0.75rem; }
-  .slot-dot { width: 26px; height: 26px; font-size: 0.7rem; }
-  .slot-btn { padding: 0.25rem 0.4rem !important; font-size: 0.8rem !important; min-width: 32px; }
-  .slot-btn.wide { font-size: 0.65rem !important; }
-  .slot-hint { font-size: 0.65rem; }
-  .option-card { padding: 0.3rem; }
-  /* Download cards: preview box lebih pendek */
-  .download-preview-box { height: 140px; }
-  .download-card { padding: 1rem 0.75rem; }
-  .download-card-title { font-size: 1rem; }
-  /* Admin: content padding lebih kecil */
-  .admin-content { padding: 0.75rem; }
-  .admin-nav-link { padding: 0.5rem 0.75rem; font-size: 0.85rem; }
+  .content-wrapper { gap: 0.6rem; }
+  .app-header { height: 3.25rem; padding: 0 0.75rem; }
+  .brand-logo { font-size: 1.3rem; }
+
+  /* Camera: ultra compact */
+  .camera-layout { max-height: calc(100dvh - 3.25rem - 2.5rem); }
+  .camera-thumbnails-sidebar { height: 48px; padding: 0.35rem; gap: 0.3rem; }
+  .thumb-slot { width: 48px; height: 36px; }
+  .hud-pill { font-size: 0.6rem; padding: 0.15rem 0.4rem; }
+  .btn-shutter { width: 2.75rem; height: 2.75rem; }
+  .btn-shutter-inner { width: 1.85rem; height: 1.85rem; }
+
+  /* Studio: ultra compact */
+  .studio-layout { max-height: calc(100dvh - 3.25rem - 2rem); }
+  .studio-preview-wrapper { padding: 0.35rem; }
+  .studio-controls-panel { padding: 0.5rem; gap: 0.5rem; }
+  .studio-tab-btn { padding: 0.3rem 0.4rem; font-size: 0.7rem; }
+  .slot-dot { width: 22px; height: 22px; font-size: 0.65rem; }
+  .slot-btn { padding: 0.15rem 0.3rem !important; font-size: 0.7rem !important; min-width: 26px; }
+  .slot-btn.wide { font-size: 0.55rem !important; }
+  .option-card { padding: 0.25rem; }
+  .option-title { font-size: 0.55rem; }
+
+  /* Download */
+  .download-preview-box { height: 110px; }
+  .download-card { padding: 0.75rem 0.6rem; }
+  .download-card-title { font-size: 0.9rem; }
+
+  /* Admin */
+  .admin-content { padding: 0.5rem; }
+  .admin-title { font-size: 1.1rem; }
+  .admin-nav-link { padding: 0.4rem 0.6rem; font-size: 0.8rem; }
+}
+
+/* ─── Short viewport (mobile landscape / compact height) ─── */
+@media (max-height: 700px) and (max-width: 767px) {
+  .app-header { height: 3rem; }
+  .screen-container { height: calc(100dvh - 3rem); }
+  .studio-layout { max-height: calc(100dvh - 3rem - 1.75rem); }
+  .studio-preview-wrapper { padding: 0.35rem; }
+  .studio-controls-panel { padding: 0.5rem; gap: 0.4rem; }
+  .studio-tab-btn { padding: 0.25rem 0.4rem; font-size: 0.7rem; }
+  .slot-controls { gap: 0.3rem; }
+  .slot-dot { width: 20px; height: 20px; font-size: 0.6rem; }
+  .slot-btn { padding: 0.1rem 0.25rem !important; font-size: 0.65rem !important; min-width: 24px; }
+  .slot-hint { display: none; }
+  .option-card { padding: 0.2rem; }
+  .option-title { font-size: 0.5rem; }
+  .options-grid { gap: 0.3rem; }
+  .camera-layout { max-height: calc(100dvh - 3rem - 2rem); }
+  .camera-thumbnails-sidebar { height: 42px; }
+  .thumb-slot { width: 42px; height: 32px; }
+  .btn-shutter { width: 2.5rem; height: 2.5rem; }
+  .btn-shutter-inner { width: 1.7rem; height: 1.7rem; }
+  .hud-pill { display: none; }
 }
