@@ -29,72 +29,8 @@ import { settingsToCssFilter, DEFAULT_EFFECT_SETTINGS } from '@/lib/photobooth/e
 import EffectThumbnail from '@/components/studio/EffectThumbnail';
 
 /**
- * Daftar filter bawaan (built-in) yang selalu tersedia di Studio
- * ketika database belum memiliki efek custom.
- * Settings dikonversi ke persentase agar selaras dengan settingsToCssFilter().
- */
-const BUILTIN_EFFECTS: Effect[] = [
-  {
-    id: 'filter-normal', name: 'Normal', slug: 'normal', filter_id: 'filter-normal',
-    description: null, preview_image_url: null, is_active: true, sort_order: 0,
-    created_at: '', updated_at: '',
-    settings: { ...DEFAULT_EFFECT_SETTINGS },
-  },
-  {
-    id: 'filter-vintage', name: 'Vintage Warm', slug: 'vintage', filter_id: 'filter-vintage',
-    description: null, preview_image_url: null, is_active: true, sort_order: 1,
-    created_at: '', updated_at: '',
-    settings: { brightness: 105, contrast: 110, saturation: 120, grayscale: 0, sepia: 35, hueRotate: 0, blur: 0, opacity: 100 },
-  },
-  {
-    id: 'filter-bw', name: 'Monochrome', slug: 'monochrome', filter_id: 'filter-bw',
-    description: null, preview_image_url: null, is_active: true, sort_order: 2,
-    created_at: '', updated_at: '',
-    settings: { brightness: 95, contrast: 120, saturation: 100, grayscale: 100, sepia: 0, hueRotate: 0, blur: 0, opacity: 100 },
-  },
-  {
-    id: 'filter-pastel', name: 'Soft Pastel', slug: 'soft-pastel', filter_id: 'filter-pastel',
-    description: null, preview_image_url: null, is_active: true, sort_order: 3,
-    created_at: '', updated_at: '',
-    settings: { brightness: 110, contrast: 100, saturation: 130, grayscale: 0, sepia: 0, hueRotate: -10, blur: 0, opacity: 100 },
-  },
-  {
-    id: 'filter-cyber', name: 'Cyber Neon', slug: 'cyber-neon', filter_id: 'filter-cyber',
-    description: null, preview_image_url: null, is_active: true, sort_order: 4,
-    created_at: '', updated_at: '',
-    settings: { brightness: 100, contrast: 110, saturation: 180, grayscale: 0, sepia: 0, hueRotate: 190, blur: 0, opacity: 100 },
-  },
-  {
-    id: 'filter-sepia', name: 'Retro Sepia', slug: 'retro-sepia', filter_id: 'filter-sepia',
-    description: null, preview_image_url: null, is_active: true, sort_order: 5,
-    created_at: '', updated_at: '',
-    settings: { brightness: 95, contrast: 110, saturation: 100, grayscale: 0, sepia: 85, hueRotate: 0, blur: 0, opacity: 100 },
-  },
-  {
-    id: 'filter-sharp', name: 'Vibrant Pop', slug: 'vibrant-pop', filter_id: 'filter-sharp',
-    description: null, preview_image_url: null, is_active: true, sort_order: 6,
-    created_at: '', updated_at: '',
-    settings: { brightness: 100, contrast: 135, saturation: 150, grayscale: 0, sepia: 0, hueRotate: 0, blur: 0, opacity: 100 },
-  },
-];
-
-/** Gabung built-in + DB effects; DB efek mendahului built-in. */
-function mergeEffects(dbEffects: Effect[]): Effect[] {
-  const builtInMap = new Map(BUILTIN_EFFECTS.map((e) => [e.id, e]));
-  const seen = new Set<string>();
-  const result: Effect[] = [];
-  for (const e of dbEffects) {
-    if (!seen.has(e.id)) { seen.add(e.id); result.push(e); }
-  }
-  for (const e of BUILTIN_EFFECTS) {
-    if (!seen.has(e.id)) { seen.add(e.id); result.push(e); }
-  }
-  return result;
-}
-
-/**
  * Studio Editor (Phase 5): SATU-SATUNYA tempat memilih frame overlay
- * (Supabase, difilter photo_count + aktif) dan filter efek (lokal).
+ * (Supabase, difilter photo_count + aktif) dan filter efek (database).
  * Canvas compositing real-time: foto → filter → frame PNG di atas.
  * Geser (drag), zoom (wheel/tombol), reset. Konfigurasi disimpan
  * ke session untuk phase export. Foto tidak pernah dihapus di sini.
@@ -116,7 +52,7 @@ export default function StudioScreen() {
   const committedRef = useRef<string | null>(null);
   const switchSeqRef = useRef(0);
   const [frameSwitchError, setFrameSwitchError] = useState('');
-  const [selectedFilterId, setSelectedFilterId] = useState<string>('filter-normal');
+  const [selectedFilterId, setSelectedFilterId] = useState<string>('');
   // Settings efek yang dipilih (dari database effects).
   const [selectedEffectSettings, setSelectedEffectSettings] = useState<Effect['settings']>(DEFAULT_EFFECT_SETTINGS);
   const [adjustments, setAdjustments] = useState<PhotoAdjust[]>([]);
@@ -225,17 +161,16 @@ export default function StudioScreen() {
       try {
         const dbEffects = await getActiveEffects();
         if (!cancelled) {
-          const merged = mergeEffects(dbEffects);
-          setEffects(merged);
+          setEffects(dbEffects);
           // Sinkronkan filter terpilih dari session dengan effects yang dimuat.
-          if (merged.length > 0) {
-            const matched = merged.find((e) => e.id === savedFilter || e.slug === savedFilter);
+          if (dbEffects.length > 0) {
+            const matched = dbEffects.find((e) => e.id === savedFilter || e.slug === savedFilter);
             if (matched) {
               setSelectedFilterId(matched.id);
               setSelectedEffectSettings(matched.settings);
             } else if (!getSelectedFilterId()) {
-              setSelectedFilterId(merged[0].id);
-              setSelectedEffectSettings(merged[0].settings);
+              setSelectedFilterId(dbEffects[0].id);
+              setSelectedEffectSettings(dbEffects[0].settings);
             }
           }
         }
