@@ -53,17 +53,39 @@ export function downloadCanvas(canvas: HTMLCanvasElement, filename: string): voi
 
 type RecorderMime = { mime: string; ext: string } | null;
 
-/** Pilih mime MediaRecorder yang benar-benar didukung browser. */
-export function pickBoomerangMime(): RecorderMime {
+/* ─── Boomerang output: MP4 ───────────────────────────────────
+ * Prioritas:
+ *  1. Rekam MP4 langsung via MediaRecorder (Safari 14.1+, Chrome/Edge
+ *     modern) — dicek via isTypeSupported, tidak di-hardcode.
+ *  2. Encode langsung via WebCodecs (VideoEncoder H.264) + mp4-muxer
+ *     untuk browser tanpa MP4 MediaRecorder (tanpa perantara WebM).
+ *  3. Jika keduanya tidak tersedia: error eksplisit. TIDAK PERNAH
+ *     mengganti extension WebM menjadi .mp4 (file palsu).
+ */
+
+const BOOMERANG_W = 800;
+const BOOMERANG_H = 600;
+const BOOMERANG_FRAME_MS = 500;
+const BOOMERANG_FRAME_US = BOOMERANG_FRAME_MS * 1000;
+const BOOMERANG_LOOPS = 2;
+const BOOMERANG_BITRATE = 5_000_000;
+const BOOMERANG_CODEC = 'avc1.42E01E';
+
+/** Kandidat MIME MP4 (H.264) — diuji via isTypeSupported, tidak di-hardcode. */
+const MP4_MIME_CANDIDATES = [
+  'video/mp4;codecs="avc1.42E01E,mp4a.40.2"',
+  'video/mp4;codecs="avc1.42E01E"',
+  'video/mp4;codecs="avc1.4D401E"',
+  'video/mp4;codecs="avc1"',
+  'video/mp4',
+] as const;
+
+/** Pilih MIME MP4 yang benar-benar didukung browser untuk MediaRecorder. */
+export function pickMp4Mime(): RecorderMime {
   if (typeof MediaRecorder === 'undefined') return null;
-  const candidates = [
-    { mime: 'video/webm;codecs=vp9', ext: 'webm' },
-    { mime: 'video/webm;codecs=vp8', ext: 'webm' },
-    { mime: 'video/webm', ext: 'webm' },
-  ];
-  for (const c of candidates) {
+  for (const mime of MP4_MIME_CANDIDATES) {
     try {
-      if (MediaRecorder.isTypeSupported(c.mime)) return c;
+      if (MediaRecorder.isTypeSupported(mime)) return { mime, ext: 'mp4' };
     } catch {
       /* lanjut kandidat berikutnya */
     }
@@ -74,6 +96,7 @@ export function pickBoomerangMime(): RecorderMime {
 export interface BoomerangResult {
   blob: Blob;
   ext: string;
+  mime: string;
 }
 
 export function drawCover(
@@ -90,22 +113,24 @@ export function drawCover(
 
 /**
  * Rekam boomerang dari foto asli: maju 1..N lalu mundur N-1..2.
- * Output WebM valid via MediaRecorder (bukan klaim GIF/MP4).
+ * Merekam langsung ke MP4 bila browser mendukungnya (Safari, Chrome modern).
+ * Jangan gunakan fungsi ini untuk WebM — output harus selalu MP4 valid.
  */
 export async function recordBoomerang(
   photos: string[],
-  onProgress?: (done: number, total: number) => void
+  onProgress?: (done: number, total: number) => void,
+  mimeOverride?: { mime: string; ext: string },
 ): Promise<BoomerangResult> {
-  const picked = pickBoomerangMime();
+  const picked = mimeOverride ?? pickMp4Mime();
   if (!picked) {
-    throw new Error('Browser ini tidak mendukung perekaman video (MediaRecorder/WebM).');
+    throw new Error('Browser ini tidak mendukung perekaman video MP4.');
   }
   if (photos.length === 0) throw new Error('Tidak ada foto untuk boomerang.');
 
-  const W = 800;
-  const H = 600;
-  const FRAME_MS = 500;
-  const LOOPS = 2;
+  const W = BOOMERANG_W;
+  const H = BOOMERANG_H;
+  const FRAME_MS = BOOMERANG_FRAME_MS;
+  const LOOPS = BOOMERANG_LOOPS;
 
   const imgs = await Promise.all(photos.map((u) => loadImage(u)));
   const order = boomerangOrder(photos.length);
@@ -118,7 +143,7 @@ export async function recordBoomerang(
   if (!ctx) throw new Error('Canvas tidak didukung browser ini.');
 
   const stream = canvas.captureStream(30);
-  const rec = new MediaRecorder(stream, { mimeType: picked.mime, videoBitsPerSecond: 5_000_000 });
+  const rec = new MediaRecorder(stream, { mimeType: picked.mime, videoBitsPerSecond: BOOMERANG_BITRATE });
   const chunks: Blob[] = [];
   const done = new Promise<Blob>((resolve, reject) => {
     rec.ondataavailable = (e) => {
@@ -148,5 +173,123 @@ export async function recordBoomerang(
 
   const blob = await done;
   if (blob.size === 0) throw new Error('Hasil boomerang kosong.');
-  return { blob, ext: picked.ext };
+  if (!blob.type.startsWith('video/mp4')) {
+    throw new Error('Hasil rekaman bukan MP4 yang valid.');
+  }
+  return { blob, ext: picked.ext, mime: picked.mime };
+}
+
+/**
+ * Cek apakah browser mampu encode MP4 langsung via WebCodecs
+ * (fallback untuk browser tanpa MP4 MediaRecorder, mis. Firefox).
+ */
+export async function canEncodeMp4Fallback(): Promise<boolean> {
+  try {
+    if (typeof VideoEncoder === 'undefined' || typeof VideoFrame === 'undefined') return false;
+    const support = await VideoEncoder.isConfigSupported({
+      codec: BOOMERANG_CODEC,
+      width: BOOMERANG_W,
+      height: BOOMERANG_H,
+      bitrate: BOOMERANG_BITRATE,
+      framerate: 2,
+    });
+    return support.supported === true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Encode boomerang langsung ke MP4 via WebCodecs (VideoEncoder H.264)
+ * + mp4-muxer — tanpa perantara WebM, tanpa FFmpeg.
+ * Visual identik dengan recordBoomerang: urutan, resolusi, dan durasi sama.
+ */
+export async function recordBoomerangMp4(
+  photos: string[],
+  onProgress?: (done: number, total: number) => void,
+): Promise<Blob> {
+  if (photos.length === 0) throw new Error('Tidak ada foto untuk boomerang.');
+  if (!(await canEncodeMp4Fallback())) {
+    throw new Error('Browser ini tidak mendukung pembuatan video MP4.');
+  }
+
+  const { Muxer, ArrayBufferTarget } = await import('mp4-muxer');
+
+  const W = BOOMERANG_W;
+  const H = BOOMERANG_H;
+  const LOOPS = BOOMERANG_LOOPS;
+
+  const imgs = await Promise.all(photos.map((u) => loadImage(u)));
+  const order = boomerangOrder(photos.length);
+  const totalFrames = order.length * LOOPS;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('Canvas tidak didukung browser ini.');
+
+  const muxer = new Muxer({
+    target: new ArrayBufferTarget(),
+    video: { codec: 'avc', width: W, height: H },
+    fastStart: 'in-memory',
+  });
+
+  let encodeError: Error | null = null;
+  const encoder = new VideoEncoder({
+    output: (chunk, meta) => {
+      try {
+        muxer.addVideoChunk(chunk, meta);
+      } catch (err) {
+        encodeError = err instanceof Error ? err : new Error('Muxing MP4 gagal.');
+      }
+    },
+    error: (e) => {
+      encodeError = e instanceof Error ? e : new Error('Encoding MP4 gagal.');
+    },
+  });
+  encoder.configure({
+    codec: BOOMERANG_CODEC,
+    width: W,
+    height: H,
+    bitrate: BOOMERANG_BITRATE,
+    framerate: 2,
+  });
+
+  try {
+    let drawn = 0;
+    for (let loop = 0; loop < LOOPS; loop++) {
+      for (const idx of order) {
+        if (encodeError) throw encodeError;
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, W, H);
+        drawCover(ctx, imgs[idx], W, H);
+        const timestamp = drawn * BOOMERANG_FRAME_US;
+        const frame = new VideoFrame(canvas, { timestamp, duration: BOOMERANG_FRAME_US });
+        try {
+          // Keyframe di awal setiap loop agar hasil dapat di-seek dengan baik.
+          encoder.encode(frame, { keyFrame: drawn % order.length === 0 });
+        } finally {
+          frame.close();
+        }
+        drawn += 1;
+        onProgress?.(drawn, totalFrames);
+      }
+    }
+    if (encodeError) throw encodeError;
+    await encoder.flush();
+    if (encodeError) throw encodeError;
+    muxer.finalize();
+  } finally {
+    try {
+      if (encoder.state !== 'closed') encoder.close();
+    } catch {
+      /* abaikan */
+    }
+  }
+
+  if (encodeError) throw encodeError;
+  const buffer = muxer.target.buffer;
+  if (!buffer || buffer.byteLength === 0) throw new Error('Hasil MP4 kosong.');
+  return new Blob([buffer], { type: 'video/mp4' });
 }

@@ -10,8 +10,10 @@ import {
   downloadOriginals,
   downloadUrl,
   drawCover,
-  pickBoomerangMime,
+  pickMp4Mime,
+  canEncodeMp4Fallback,
   recordBoomerang,
+  recordBoomerangMp4,
 } from '@/lib/photobooth/export';
 import { getCapturedPhotos } from '@/lib/photobooth/capture';
 import {
@@ -34,7 +36,7 @@ import { settingsToCssFilter } from '@/lib/photobooth/effect-utils';
  * Hasil akhir (Phase 6): preview + 3 download nyata.
  * - Foto asli (JPEG per foto, tanpa frame/filter).
  * - Foto final (PNG komposit = preview Studio, via modul bersama).
- * - Boomerang (WebM via MediaRecorder — format jujur sesuai encoder).
+ * - Boomerang (MP4 via MediaRecorder native atau WebCodecs fallback).
  * Tanpa upload server, tanpa gambar dummy.
  */
 export default function DownloadFinalScreen() {
@@ -231,20 +233,34 @@ export default function DownloadFinalScreen() {
 
   const handleBoomerang = async () => {
     if (busy !== null || photos.length === 0) return;
-    if (!pickBoomerangMime()) {
-      setCardError('Browser ini tidak mendukung perekaman video (MediaRecorder/WebM).');
-      return;
-    }
     setBusy('boomerang');
     setCardError('');
-    setBoomProgress('Merekam...');
     try {
-      const { blob, ext } = await recordBoomerang(photos, (done, total) => {
-        setBoomProgress(`Merekam ${done}/${total}...`);
-      });
+      let blob: Blob;
+      const mp4 = pickMp4Mime();
+      if (mp4) {
+        // Jalur 1: rekam MP4 langsung (Safari / Chrome modern).
+        setBoomProgress('Merekam...');
+        const result = await recordBoomerang(photos, (done, total) => {
+          setBoomProgress(`Merekam ${done}/${total}...`);
+        }, mp4);
+        blob = result.blob;
+      } else if (await canEncodeMp4Fallback()) {
+        // Jalur 2: encode langsung via WebCodecs + muxer (tanpa WebM).
+        setBoomProgress('Menyiapkan MP4...');
+        blob = await recordBoomerangMp4(photos, (done, total) => {
+          setBoomProgress(`Mengonversi ${done}/${total}...`);
+        });
+      } else {
+        throw new Error('Browser ini tidak mendukung pembuatan video MP4. Coba gunakan Chrome atau Safari terbaru.');
+      }
+      // Verifikasi: jangan pernah mengunduh file palsu.
+      if (!blob.type.startsWith('video/mp4') || blob.size === 0) {
+        throw new Error('Hasil MP4 tidak valid.');
+      }
       const url = URL.createObjectURL(blob);
       try {
-        downloadUrl(url, `lumia-boomerang.${ext}`);
+        downloadUrl(url, 'lumia-boomerang.mp4');
       } finally {
         setTimeout(() => URL.revokeObjectURL(url), 10_000);
       }
@@ -322,7 +338,7 @@ export default function DownloadFinalScreen() {
             <canvas ref={boomCanvasRef} width={400} height={300} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '4px' }} />
           </div>
           <div className="download-card-title">Boomerang</div>
-          <div className="download-card-desc">Download your photo boomerang (WebM)</div>
+          <div className="download-card-desc">Download your photo boomerang (MP4)</div>
           <button className="btn-card-download" onClick={() => void handleBoomerang()} disabled={busy !== null || photos.length === 0}>
             {busy === 'boomerang' ? boomProgress || 'Merekam...' : 'Download boomerang'}
           </button>
