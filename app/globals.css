@@ -71,14 +71,13 @@ body {
   position: absolute;
   top: 0;
   right: 0;
-  width: 38vw;
-  height: 38vw;
-  max-width: 520px;
-  max-height: 520px;
+  width: 32vw;
+  height: 32vw;
+  max-width: 420px;
+  max-height: 420px;
   pointer-events: none;
   z-index: 1;
-  opacity: 0.95;
-  transform: translate(12%, -12%);
+  opacity: 0.9;
   overflow: hidden;
 }
 
@@ -86,14 +85,13 @@ body {
   position: absolute;
   bottom: 0;
   left: 0;
-  width: 32vw;
-  height: 32vw;
-  max-width: 450px;
-  max-height: 450px;
+  width: 28vw;
+  height: 28vw;
+  max-width: 360px;
+  max-height: 360px;
   pointer-events: none;
   z-index: 1;
-  opacity: 0.95;
-  transform: translate(-12%, 12%);
+  opacity: 0.9;
   overflow: hidden;
 }
 
