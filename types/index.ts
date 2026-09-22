@@ -66,17 +66,6 @@ export interface EffectSettings {
   opacity: number;
 }
 
-export const DEFAULT_EFFECT_SETTINGS: EffectSettings = {
-  brightness: 100,
-  contrast: 100,
-  saturation: 100,
-  grayscale: 0,
-  sepia: 0,
-  hueRotate: 0,
-  blur: 0,
-  opacity: 100,
-};
-
 export interface Effect {
   id: string;
   name: string;
