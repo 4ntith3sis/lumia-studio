@@ -90,7 +90,7 @@ export default function ResultsReviewScreen() {
         </div>
       )}
 
-      <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+      <div className="page-actions-row">
         <button
           type="button"
           className="btn-secondary"

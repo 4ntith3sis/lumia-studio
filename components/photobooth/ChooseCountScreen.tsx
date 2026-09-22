@@ -109,7 +109,7 @@ export default function ChooseCountScreen() {
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: '1rem' }}>
+      <div className="page-actions-row">
         <Link href="/" className="btn-secondary">
           <svg className="icon-svg" viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" strokeWidth="2.2" fill="none" strokeLinecap="round" strokeLinejoin="round">
             <line x1="19" y1="12" x2="5" y2="12" />

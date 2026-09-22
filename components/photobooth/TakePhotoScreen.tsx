@@ -360,7 +360,7 @@ export default function TakePhotoScreen() {
           <div className="thumb-title">
             Tangkapan (<span>({photos.length}/{photoCount ?? '?'})</span>)
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1 }}>
+          <div className="thumb-slots-container">
             {photoCount === null ? (
               <div className="thumb-slot">?</div>
             ) : (
