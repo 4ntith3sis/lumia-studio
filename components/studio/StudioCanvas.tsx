@@ -60,10 +60,20 @@ export default function StudioCanvas({
       img.crossOrigin = 'anonymous';
       img.onload = () => {
         if (cancelled) return;
-        if (frameUrl && url === frameUrl && img.naturalWidth > 0 && img.naturalHeight > 0) {
+        // Safari: pastikan gambar benar-benar siap sebelum memicu re-render.
+        // Beberapa versi Safari melaporkan complete=true namun naturalWidth=0
+        // saat gambar data URL baru pertama kali dimuat. Tunda setImgVersion
+        // hingga dimensi valid tersedia.
+        if (img.naturalWidth === 0 || img.naturalHeight === 0) return;
+        if (frameUrl && url === frameUrl) {
           setFrameAspect(img.naturalWidth / img.naturalHeight);
         }
         setImgVersion((v) => v + 1);
+      };
+      img.onerror = () => {
+        if (cancelled) return;
+        // Hapus dari cache agar tidak dianggap siap.
+        cacheRef.current.delete(url);
       };
       img.src = url;
       cacheRef.current.set(url, img);
@@ -90,13 +100,16 @@ export default function StudioCanvas({
     ctx.scale(dpr, dpr);
 
     // Render via modul compositing bersama (identik dengan export).
+    // Pengecekan kesiapan gambar lebih ketat untuk kompatibilitas Safari.
     const photoImgs = Array.from({ length: count }, (_, i) => {
       const img = photos[i] ? cacheRef.current.get(photos[i]) : undefined;
-      return img && img.complete && img.naturalWidth > 0 ? img : null;
+      // Safari: img.complete bisa true namun dimensions masih 0 untuk data URL.
+      // Pastikan kedua kondisi terpenuhi sebelum memasukkan ke canvas.
+      return img && img.complete && img.naturalWidth > 0 && img.naturalHeight > 0 ? img : null;
     });
     const frame = frameUrl ? cacheRef.current.get(frameUrl) : undefined;
     const frameImg =
-      frame && frame.complete && frame.naturalWidth > 0 ? frame : null;
+      frame && frame.complete && frame.naturalWidth > 0 && frame.naturalHeight > 0 ? frame : null;
 
     drawComposite({
       ctx,

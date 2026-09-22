@@ -4,6 +4,26 @@ import type { ValidPhotoCount } from '@/types';
 export { computeSlots };
 
 /**
+ * Deteksi apakah browser mendukung CanvasRenderingContext2D.filter.
+ * Safari versi lama (< 14) tidak mendukung properti ini.
+ */
+let _canvasFilterSupported: boolean | null = null;
+export function isCanvasFilterSupported(): boolean {
+  if (_canvasFilterSupported !== null) return _canvasFilterSupported;
+  try {
+    const c = document.createElement('canvas');
+    const ctx = c.getContext('2d');
+    if (!ctx) { _canvasFilterSupported = false; return false; }
+    (ctx as CanvasRenderingContext2D & { filter?: string }).filter = 'brightness(1)';
+    _canvasFilterSupported = true;
+    return true;
+  } catch {
+    _canvasFilterSupported = false;
+    return false;
+  }
+}
+
+/**
  * Phase 6 — SATU-SATUNYA sumber logika compositing.
  * Dipakai oleh StudioCanvas (preview) dan export final, sehingga
  * hasil download dijamin identik dengan preview: posisi, skala,
@@ -35,6 +55,12 @@ export function drawComposite(input: CompositeInput): void {
   const slots = computeSlots(count, W, H);
 
   // 2–3. Foto + filter (di bawah frame).
+  // Safari compatibility: ctx.filter didukung Safari 14+. Pada versi lebih lama,
+  // properti ini tidak ada dan penyetelan akan gagal diam-diam.
+  // Kita cek dukungan sekali di awal, lalu terapkan filter yang aman per-slot.
+  const filterSupported = isCanvasFilterSupported();
+  const safeFilter = filterSupported && filterCss !== 'none' ? filterCss : 'none';
+
   for (let i = 0; i < count; i++) {
     const slot = slots[i];
     const img = photoImgs[i];
@@ -65,7 +91,7 @@ export function drawComposite(input: CompositeInput): void {
     ctx.beginPath();
     ctx.rect(slot.x, slot.y, slot.w, slot.h);
     ctx.clip();
-    ctx.filter = filterCss === 'none' ? 'none' : filterCss;
+    ctx.filter = safeFilter;
     ctx.drawImage(img, cx - dw / 2, cy - dh / 2, dw, dh);
     ctx.restore();
   }
