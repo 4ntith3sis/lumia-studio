@@ -27,7 +27,7 @@ import {
 } from '@/lib/photobooth/studio';
 import { getFrameById } from '@/lib/services/frame.service';
 import { getActiveEffects } from '@/lib/services/effect.service';
-import type { ValidPhotoCount } from '@/types';
+import type { EffectSettings, ValidPhotoCount } from '@/types';
 import { settingsToCssFilter } from '@/lib/photobooth/effect-utils';
 
 /**
@@ -45,6 +45,8 @@ export default function DownloadFinalScreen() {
   const [frameUrl, setFrameUrl] = useState<string | null>(null);
   const [hasFrame, setHasFrame] = useState(false);
   const [filterCss, setFilterCss] = useState('none');
+  // Settings mentah untuk pixel fallback Safari (diteruskan ke renderFinalCanvas).
+  const [effectSettings, setEffectSettings] = useState<EffectSettings | null>(null);
   const [adjustments, setAdjustments] = useState<PhotoAdjust[]>([]);
   const [invalid, setInvalid] = useState(false);
   const [finalReady, setFinalReady] = useState(false);
@@ -80,18 +82,23 @@ export default function DownloadFinalScreen() {
       // Filter: cari dari database effects, fallback ke 'none'.
       const savedFilter = getSelectedFilterId();
       let css = 'none';
+      let matchedSettings: EffectSettings | null = null;
       if (savedFilter && savedFilter !== 'filter-normal') {
         try {
           const dbEffects = await getActiveEffects();
           const matched = dbEffects.find((e) => e.id === savedFilter || e.slug === savedFilter);
           if (matched) {
             css = settingsToCssFilter(matched.settings);
+            matchedSettings = matched.settings;
           }
         } catch {
           /* abaikan — tetap gunakan 'none' */
         }
       }
-      if (!cancelled) setFilterCss(css);
+      if (!cancelled) {
+        setFilterCss(css);
+        setEffectSettings(matchedSettings);
+      }
 
       // Frame: samakan dengan Studio (live → fallback session).
       let url: string | null = null;
@@ -116,6 +123,7 @@ export default function DownloadFinalScreen() {
           photos: captured,
           frameUrl: url,
           filterCss: css,
+          effectSettings: matchedSettings,
           adjustments: adj,
           count: c,
           width: 600,
@@ -208,6 +216,7 @@ export default function DownloadFinalScreen() {
         photos,
         frameUrl,
         filterCss,
+        effectSettings,
         adjustments,
         count,
         width: 1200,

@@ -291,6 +291,7 @@ export default function StudioScreen() {
                     photos={photos}
                     frameUrl={frameUrl}
                     filterCss={filterCss}
+                    effectSettings={selectedEffectSettings}
                     count={count}
                     adjustments={adjustments}
                     selectedSlot={selectedSlot}
@@ -447,7 +448,7 @@ export default function StudioScreen() {
               </svg>
               Kembali
             </Link>
-            <Link href="/hasil-akhir" className="btn-primary" style={{ flex: 1 }}>
+            <Link href="/hasil-akhir" className="btn-primary">
               Simpan & Lihat Hasil
               <svg className="icon-svg" viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" strokeWidth="2.2" fill="none" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="5" y1="12" x2="19" y2="12" />

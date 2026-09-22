@@ -1117,6 +1117,16 @@ body {
   text-align: center;
 }
 
+/* Studio action buttons: kedua tombol diperlakukan sebagai satu group,
+   center horizontal terhadap panel kanan, dengan gap yang jelas. */
+.studio-actions-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  width: 100%;
+}
+
 .studio-tabs-nav {
   display: flex;
   background: var(--color-bg-main);
@@ -1756,10 +1766,10 @@ a.admin-stat-card:hover {
   .studio-controls-panel { max-height: 480px; padding: 1rem; gap: 0.85rem; }
   .studio-tab-btn { padding: 0.45rem 0.75rem; font-size: 0.8rem; }
 
-  /* Download */
-  .download-cards-grid { max-width: 900px; gap: 1rem; }
-  .download-preview-box { height: 140px; }
-  .download-card { padding: 1rem 0.85rem; gap: 0.75rem; }
+  /* Download — tablet: pertahankan 3 kolom, tambah safety shrink + preview berbasis vh */
+  .download-cards-grid { max-width: 900px; gap: 1rem; min-height: 0; }
+  .download-card { min-height: 0; }
+  .download-preview-box { height: clamp(110px, 18vh, 140px); min-height: 0; }
   .download-card-title { font-size: 1.05rem; }
   .download-bottom-actions { gap: 1rem; }
 
@@ -1803,7 +1813,7 @@ a.admin-stat-card:hover {
   }
 
   /* Home */
-  .home-hero { grid-template-columns: 1fr; text-align: center; gap: 0.75rem; align-items: center; }
+  .home-hero { grid-template-columns: 1fr; text-align: center; gap: 1.25rem; align-items: center; }
   .home-title { font-size: clamp(1.4rem, 5.5vw, 1.85rem); margin-bottom: 0.5rem; }
   .home-desc { font-size: 0.85rem; margin-bottom: 1rem; }
   .home-illustration-container { max-width: clamp(200px, 32vh, 280px); }
@@ -1935,22 +1945,49 @@ a.admin-stat-card:hover {
   .slot-hint { font-size: 0.58rem; margin-top: 0.1rem; }
   .frame-switch-error { font-size: 0.65rem; min-height: 1em; }
 
-  /* Download Final */
+  /* Studio actions: tetap centered, wrap bila viewport sempit agar tidak overflow. */
+  .studio-actions-footer { flex-wrap: wrap; gap: 0.6rem; }
+
+  /* Download Final — horizontal compact cards: preview kiri, konten kanan.
+     Satu viewport tanpa scroll; Card 3 tetap terlihat utuh. */
   .download-cards-grid {
     grid-template-columns: 1fr;
     gap: 0.5rem;
-    max-width: 360px;
+    max-width: 400px;
     width: 100%;
+    min-height: 0;
+    flex-shrink: 1;
   }
-  .download-card { padding: 0.65rem; gap: 0.4rem; border-width: 2px; border-radius: var(--radius-md); }
-  .download-preview-box { height: clamp(80px, 15vh, 110px); }
-  .raw-photos-row { gap: 3px; padding: 4px; }
-  .download-card-title { font-size: 0.92rem; }
-  .download-card-desc { font-size: 0.7rem; margin-top: 0; }
-  .btn-card-download { padding: 0.4rem 0.65rem; font-size: 0.78rem; }
-  .download-bottom-actions { flex-direction: column; gap: 0.4rem; width: 100%; }
-  .download-bottom-actions .btn-primary,
-  .download-bottom-actions .btn-secondary { width: 100%; justify-content: center; }
+  .download-card {
+    display: grid;
+    grid-template-columns: 118px 1fr;
+    grid-template-rows: auto auto 1fr;
+    grid-template-areas:
+      "preview title"
+      "preview desc"
+      "preview button";
+    align-items: center;
+    column-gap: 0.6rem;
+    row-gap: 0.2rem;
+    padding: 0.5rem 0.6rem;
+    border-width: 2px;
+    border-radius: var(--radius-md);
+    min-height: 0;
+    text-align: left;
+  }
+  .download-preview-box {
+    grid-area: preview;
+    height: 100%;
+    min-height: 112px;
+    align-self: stretch;
+  }
+  .raw-photos-row { gap: 3px; padding: 3px; flex-wrap: wrap; align-content: center; }
+  .download-card-title { grid-area: title; align-self: end; font-size: 0.85rem; }
+  .download-card-desc { grid-area: desc; font-size: 0.65rem; margin-top: 0; }
+  .btn-card-download { grid-area: button; width: 100%; align-self: start; margin-top: 0; padding: 0.35rem 0.5rem; font-size: 0.72rem; }
+  .download-bottom-actions { flex-direction: column; gap: 0.45rem; width: 100%; align-items: stretch; }
+  .download-bottom-actions .btn-primary { width: 100%; justify-content: center; padding: 0.5rem 0.75rem; font-size: 0.82rem; }
+  .download-bottom-actions .btn-secondary { width: 100%; justify-content: center; padding: 0.25rem; font-size: 0.78rem; }
 
   /* Frame actions */
   .frame-actions { flex-direction: column; gap: 0.4rem; width: 100%; }
@@ -2032,8 +2069,14 @@ a.admin-stat-card:hover {
   .btn-shutter-inner { width: 1.75rem; height: 1.75rem; }
   .hud-pill { display: none; }
 
-  .download-preview-box { height: clamp(70px, 12vh, 95px); }
-  .download-card { padding: 0.5rem; gap: 0.3rem; }
-  .download-card-title { font-size: 0.85rem; }
+  .download-cards-grid { gap: 0.35rem; }
+  .download-card { grid-template-columns: 100px 1fr; column-gap: 0.5rem; padding: 0.4rem 0.5rem; row-gap: 0.15rem; }
+  .download-preview-box { min-height: 88px; }
+  .download-card-title { font-size: 0.78rem; }
+  .download-card-desc { font-size: 0.6rem; }
+  .btn-card-download { padding: 0.3rem 0.45rem; font-size: 0.68rem; }
+  .download-bottom-actions { flex-direction: row; gap: 0.35rem; }
+  .download-bottom-actions .btn-primary,
+  .download-bottom-actions .btn-secondary { width: auto; flex: 1; min-width: 0; padding: 0.4rem 0.4rem; font-size: 0.72rem; white-space: nowrap; }
 }
 

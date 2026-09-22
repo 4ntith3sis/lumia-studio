@@ -6,12 +6,14 @@ import {
   clampAdjustToSlot,
   type PhotoAdjust,
 } from '@/lib/photobooth/studio';
-import type { ValidPhotoCount } from '@/types';
+import type { EffectSettings, ValidPhotoCount } from '@/types';
 
 interface StudioCanvasProps {
   photos: string[];
   frameUrl: string | null;
   filterCss: string;
+  /** Settings mentah untuk pixel fallback Safari (opsional). */
+  effectSettings?: EffectSettings | null;
   count: ValidPhotoCount;
   adjustments: PhotoAdjust[];
   selectedSlot: number;
@@ -30,6 +32,7 @@ export default function StudioCanvas({
   photos,
   frameUrl,
   filterCss,
+  effectSettings,
   count,
   adjustments,
   selectedSlot,
@@ -119,6 +122,7 @@ export default function StudioCanvas({
       photoImgs,
       frameImg,
       filterCss,
+      effectSettings,
       adjustments,
     });
 
@@ -132,7 +136,7 @@ export default function StudioCanvas({
       ctx.strokeRect(s.x, s.y, s.w, s.h);
       ctx.restore();
     }
-  }, [photos, frameUrl, filterCss, adjustments, selectedSlot, count, logicalH, imgVersion]);
+  }, [photos, frameUrl, filterCss, effectSettings, adjustments, selectedSlot, count, logicalH, imgVersion]);
 
   const toLogical = (clientX: number, clientY: number) => {
     const canvas = canvasRef.current;
