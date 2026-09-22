@@ -1038,11 +1038,20 @@ body {
   border: none;
   background: transparent;
   cursor: grab;
-  /* Ukuran mengikuti aspect-ratio frame; min/max ditransfer
-     melalui rasio sehingga tidak distorsi dan tidak overflow. */
-  height: 100%;
+  /* Uniform fit global untuk SEMUA frame: dimensi elemen mengikuti
+     intrinsic ratio bitmap canvas (= dimensi asli PNG frame) dengan
+     SATU skala seragam. width+height auto + kedua max constraint
+     membuat min/max ditransfer melalui rasio (tidak ada sumbu yang
+     dijepit sendirian). Pola yang sama dipakai canvas preview final
+     di halaman download. Jangan paksa height:100% + max-width saja:
+     itu menjepit lebar tanpa menyesuaikan tinggi → stretch
+     non-uniform + pemetaan drag (toLogical) ikut salah skala. */
   width: auto;
+  height: auto;
   max-width: 100%;
+  max-height: 100%;
+  min-width: 0;
+  min-height: 0;
 }
 
 .studio-canvas:active {

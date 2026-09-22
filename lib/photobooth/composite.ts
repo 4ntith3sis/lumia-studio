@@ -1,4 +1,5 @@
 import { computeSlots, clampAdjustToSlot, type PhotoAdjust } from '@/lib/photobooth/studio';
+import { resolveFrameSlots, type SlotRect } from '@/lib/photobooth/frame-slots';
 import type { EffectSettings, ValidPhotoCount } from '@/types';
 
 export { computeSlots };
@@ -312,6 +313,13 @@ export interface CompositeInput {
   /** Settings mentah untuk pixel fallback Safari (opsional). */
   effectSettings?: EffectSettings | null;
   adjustments: PhotoAdjust[];
+  /**
+   * Slot foto yang SUDAH diselesaikan (dari deteksi alpha frame).
+   * Bila tidak diberikan, dipakai grid standar computeSlots().
+   * Bila diberikan, panjangnya HARUS sama dengan count — jika tidak,
+   * error dilempar agar tidak terjadi render tumpang tindih diam-diam.
+   */
+  slots?: SlotRect[];
 }
 
 // Dev-only: log pergantian filter agar mudah diverifikasi tanpa polling console.
@@ -337,7 +345,16 @@ export function drawComposite(input: CompositeInput): void {
   ctx.fillStyle = '#FDF5E6';
   ctx.fillRect(0, 0, W, H);
 
-  const slots = computeSlots(count, W, H);
+  // Slot foto: pakai hasil deteksi bila diberikan (sudah tervalidasi
+  // 1 foto per slot oleh penelepon), selain itu grid standar.
+  // Panjang yang salah = error keras, bukan fallback diam-diam.
+  const slots = input.slots ?? computeSlots(count, W, H);
+  if (slots.length !== count) {
+    throw new Error(
+      `Slot foto tidak valid: ditemukan ${slots.length} slot untuk ${count} foto. ` +
+        'Pilih frame lain yang sesuai.',
+    );
+  }
 
   // 2–3. Foto + filter (di bawah frame).
   // Jalur native dipakai hanya bila browser TERBUKTI menerapkan ctx.filter
@@ -438,7 +455,10 @@ export async function renderFinalCanvas(options: FinalRenderOptions): Promise<HT
   }
 
   const W = width;
-  const H = Math.max(450, Math.min(1800, Math.round(width / aspect)));
+  // Tinggi mengikuti rasio asli frame TANPA clamp agar tidak ada distorsi
+  // pada frame apa pun (portrait, landscape, square, custom). Skala display
+  // responsif tidak memengaruhi export: ini koordinat resolusi penuh.
+  const H = Math.max(1, Math.round(width / aspect));
 
   const canvas = document.createElement('canvas');
   canvas.width = W;
@@ -446,7 +466,17 @@ export async function renderFinalCanvas(options: FinalRenderOptions): Promise<HT
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Canvas tidak didukung browser ini.');
 
-  drawComposite({ ctx, W, H, count, photoImgs, frameImg, filterCss, effectSettings, adjustments });
+  // Selesaikan slot dari frame aktual agar export identik dengan preview.
+  // Tanpa frame → grid standar. Deteksi gagal → lempar error deskriptif
+  // (ditangkap penelepon menjadi pesan UI), bukan grid yang mismatch.
+  let slots: SlotRect[] | undefined;
+  if (frameUrl && frameImg) {
+    const res = resolveFrameSlots({ frameImg, frameKey: frameUrl, count, W, H });
+    if (!res.ok) throw new Error(res.message);
+    slots = res.slots;
+  }
+
+  drawComposite({ ctx, W, H, count, photoImgs, frameImg, filterCss, effectSettings, adjustments, slots });
   return canvas;
 }
 

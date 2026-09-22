@@ -3,6 +3,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { computeSlots, drawComposite } from '@/lib/photobooth/composite';
 import {
+  resolveFrameSlots,
+  type SlotRect,
+} from '@/lib/photobooth/frame-slots';
+import {
   clampAdjustToSlot,
   type PhotoAdjust,
 } from '@/lib/photobooth/studio';
@@ -19,6 +23,8 @@ interface StudioCanvasProps {
   selectedSlot: number;
   onSelectSlot: (index: number) => void;
   onAdjust: (index: number, adjust: PhotoAdjust) => void;
+  /** Dipanggil saat status slot berubah (error deteksi / pulih). */
+  onSlotsError?: (message: string | null) => void;
 }
 
 const LOGICAL_W = 600;
@@ -38,6 +44,7 @@ export default function StudioCanvas({
   selectedSlot,
   onSelectSlot,
   onAdjust,
+  onSlotsError,
 }: StudioCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const cacheRef = useRef(new Map<string, HTMLImageElement>());
@@ -49,7 +56,18 @@ export default function StudioCanvas({
     origDy: number;
   } | null>(null);
   const [imgVersion, setImgVersion] = useState(0);
-  const [frameAspect, setFrameAspect] = useState<number | null>(null);
+  // Dimensi asli frame (naturalWidth/naturalHeight) — SATU-SATUNYA sumber
+  // ukuran canvas agar semua frame (portrait, landscape, square, custom)
+  // tampil tanpa distorsi dengan uniform scaling.
+  // `url` menandai frame pemilik dimensi agar dimensi basi (stale) dari
+  // frame sebelumnya tidak pernah dipakai untuk frame saat ini.
+  const [frameSize, setFrameSize] = useState<{ w: number; h: number; url: string } | null>(null);
+  // Slot terpecahkan untuk render saat ini (diisi ulang setiap render effect).
+  // Handler pointer/wheel membaca ref ini agar selalu memakai geometri
+  // yang sama dengan yang digambar (anti geser antar slot).
+  const slotsRef = useRef<SlotRect[]>([]);
+  // Kunci status terakhir yang dilaporkan ke parent (anti loop setState).
+  const slotsReportRef = useRef<string>('');
 
   // Muat & cache gambar (foto + frame) — crossOrigin agar canvas bersih.
   useEffect(() => {
@@ -58,7 +76,21 @@ export default function StudioCanvas({
     photos.forEach((u) => urls.add(u));
     if (frameUrl) urls.add(frameUrl);
     urls.forEach((url) => {
-      if (cacheRef.current.has(url)) return;
+      if (cacheRef.current.has(url)) {
+        // Cache hit: onload TIDAK akan menyala lagi, jadi sinkronkan dimensi
+        // di sini. Tanpa ini, kembali ke frame sebelumnya memakai dimensi
+        // basi frame lain → frame ter-stretch dan slot salah posisi.
+        // Guard kesetaraan mencegah loop setState (React bail-out bila sama).
+        if (frameUrl && url === frameUrl) {
+          const cached = cacheRef.current.get(url);
+          if (cached && cached.complete && cached.naturalWidth > 0 && cached.naturalHeight > 0) {
+            const w = cached.naturalWidth;
+            const h = cached.naturalHeight;
+            setFrameSize((prev) => (prev && prev.url === url && prev.w === w && prev.h === h ? prev : { w, h, url }));
+          }
+        }
+        return;
+      }
       const img = new Image();
       img.crossOrigin = 'anonymous';
       img.onload = () => {
@@ -69,7 +101,9 @@ export default function StudioCanvas({
         // hingga dimensi valid tersedia.
         if (img.naturalWidth === 0 || img.naturalHeight === 0) return;
         if (frameUrl && url === frameUrl) {
-          setFrameAspect(img.naturalWidth / img.naturalHeight);
+          const w = img.naturalWidth;
+          const h = img.naturalHeight;
+          setFrameSize((prev) => (prev && prev.url === url && prev.w === w && prev.h === h ? prev : { w, h, url }));
         }
         setImgVersion((v) => v + 1);
       };
@@ -86,49 +120,116 @@ export default function StudioCanvas({
     };
   }, [photos, frameUrl]);
 
-  const logicalH =
-    frameAspect !== null && Number.isFinite(frameAspect) && frameAspect > 0
-      ? Math.max(450, Math.min(900, Math.round(LOGICAL_W / frameAspect)))
-      : 800;
+  // Koordinat internal canvas = dimensi asli frame (TANPA clamp),
+  // sehingga rasio exakt terjaga untuk frame apa pun. Display scaling
+  // (CSS max-width/max-height + aspect-ratio) bersifat uniform.
+  // Tanpa frame: default 600×800 seperti sebelumnya.
+  // Dimensi hanya berlaku bila URL-nya cocok dengan frame aktif —
+  // mencegah dimensi basi dipakai setelah ganti frame.
+  const sizeForUrl = frameSize && frameSize.url === frameUrl ? frameSize : null;
+  const canvasW = sizeForUrl && sizeForUrl.w > 0 ? sizeForUrl.w : LOGICAL_W;
+  const canvasH = sizeForUrl && sizeForUrl.h > 0 ? sizeForUrl.h : 800;
+
+  // Selesaikan slot foto dari PNG frame aktual (cache, murah setelah pertama).
+  // - Tanpa frame            → grid standar (tidak ada overlay → aman).
+  // - Frame masih dimuat     → grid sementara (overlay belum tampil).
+  // - Deteksi gagal          → error, foto TIDAK digambar (anti tumpang tindih).
+  // Diselesaikan di dalam render effect (bukan useMemo) karena membaca
+  // cache gambar tidak aman dilakukan saat render.
 
   // Render ulang setiap state visual berubah.
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const dpr = typeof window !== 'undefined' ? Math.min(window.devicePixelRatio || 1, 2) : 1;
-    canvas.width = LOGICAL_W * dpr;
-    canvas.height = logicalH * dpr;
+    canvas.width = canvasW * dpr;
+    canvas.height = canvasH * dpr;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     ctx.scale(dpr, dpr);
 
+    const frame = frameUrl ? cacheRef.current.get(frameUrl) : undefined;
+    const frameImg =
+      frame && frame.complete && frame.naturalWidth > 0 && frame.naturalHeight > 0 ? frame : null;
+
+    let slots: SlotRect[];
+    let slotsError: string | null = null;
+    if (!frameUrl || !frameImg) {
+      slots = computeSlots(count, canvasW, canvasH);
+    } else {
+      const res = resolveFrameSlots({ frameImg, frameKey: frameUrl, count, W: canvasW, H: canvasH });
+      if (res.ok) {
+        slots = res.slots;
+      } else {
+        slots = [];
+        slotsError = res.message;
+      }
+    }
+    slotsRef.current = slots;
+
+    // Laporkan status ke parent hanya saat berubah (anti loop setState).
+    const reportKey = `${frameUrl ?? ''}|${slotsError ?? ''}`;
+    if (slotsReportRef.current !== reportKey) {
+      slotsReportRef.current = reportKey;
+      onSlotsError?.(slotsError);
+    }
+
+    if (slotsError) {
+      // Slot tidak valid: JANGAN gambar foto (mencegah tumpang tindih).
+      // Gambar background + overlay frame (bila ada) + panel error.
+      ctx.fillStyle = '#FDF5E6';
+      ctx.fillRect(0, 0, canvasW, canvasH);
+      if (frameImg) {
+        ctx.drawImage(frameImg, 0, 0, canvasW, canvasH);
+      }
+      ctx.save();
+      ctx.fillStyle = 'rgba(253, 245, 230, 0.92)';
+      const bw = canvasW * 0.86;
+      const bh = 96;
+      const bx = (canvasW - bw) / 2;
+      const by = (canvasH - bh) / 2;
+      ctx.fillRect(bx, by, bw, bh);
+      ctx.strokeStyle = '#FF5232';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(bx, by, bw, bh);
+      ctx.fillStyle = '#FF5232';
+      ctx.font = '800 15px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('Frame tidak dapat dipakai', canvasW / 2, canvasH / 2 - 14);
+      ctx.fillStyle = '#1E1E1E';
+      ctx.font = '600 12px sans-serif';
+      ctx.fillText('Pilih frame lain yang sesuai.', canvasW / 2, canvasH / 2 + 14);
+      ctx.restore();
+      return;
+    }
+
     // Render via modul compositing bersama (identik dengan export).
     // Pengecekan kesiapan gambar lebih ketat untuk kompatibilitas Safari.
+    // frame/frameImg dari atas dipakai ulang (sudah tervalidasi siap).
     const photoImgs = Array.from({ length: count }, (_, i) => {
       const img = photos[i] ? cacheRef.current.get(photos[i]) : undefined;
       // Safari: img.complete bisa true namun dimensions masih 0 untuk data URL.
       // Pastikan kedua kondisi terpenuhi sebelum memasukkan ke canvas.
       return img && img.complete && img.naturalWidth > 0 && img.naturalHeight > 0 ? img : null;
     });
-    const frame = frameUrl ? cacheRef.current.get(frameUrl) : undefined;
-    const frameImg =
-      frame && frame.complete && frame.naturalWidth > 0 && frame.naturalHeight > 0 ? frame : null;
 
     drawComposite({
       ctx,
-      W: LOGICAL_W,
-      H: logicalH,
+      W: canvasW,
+      H: canvasH,
       count,
       photoImgs,
       frameImg,
       filterCss,
       effectSettings,
       adjustments,
+      slots,
     });
 
     // Penanda slot terpilih (tidak menggerakkan frame).
-    if (selectedSlot >= 0 && selectedSlot < count) {
-      const s = computeSlots(count, LOGICAL_W, logicalH)[selectedSlot];
+    if (selectedSlot >= 0 && selectedSlot < slots.length) {
+      const s = slots[selectedSlot];
       ctx.save();
       ctx.strokeStyle = '#FF5232';
       ctx.lineWidth = 3;
@@ -136,22 +237,25 @@ export default function StudioCanvas({
       ctx.strokeRect(s.x, s.y, s.w, s.h);
       ctx.restore();
     }
-  }, [photos, frameUrl, filterCss, effectSettings, adjustments, selectedSlot, count, logicalH, imgVersion]);
+  }, [photos, frameUrl, filterCss, effectSettings, adjustments, selectedSlot, count, canvasW, canvasH, imgVersion, onSlotsError]);
 
   const toLogical = (clientX: number, clientY: number) => {
     const canvas = canvasRef.current;
     if (!canvas) return null;
     const rect = canvas.getBoundingClientRect();
     if (rect.width === 0 || rect.height === 0) return null;
+    // Pemetaan ruang display → ruang canvas asli memakai skala uniform
+    // yang sama (rect vs canvasW/canvasH), sehingga drag/zoom akurat
+    // pada frame berukuran apa pun.
     return {
-      x: ((clientX - rect.left) / rect.width) * LOGICAL_W,
-      y: ((clientY - rect.top) / rect.height) * logicalH,
+      x: ((clientX - rect.left) / rect.width) * canvasW,
+      y: ((clientY - rect.top) / rect.height) * canvasH,
     };
   };
 
   const hitSlot = (x: number, y: number): number => {
-    const slots = computeSlots(count, LOGICAL_W, logicalH);
-    for (let i = 0; i < count; i++) {
+    const slots = slotsRef.current;
+    for (let i = 0; i < slots.length; i++) {
       const s = slots[i];
       if (x >= s.x && x <= s.x + s.w && y >= s.y && y <= s.y + s.h) return i;
     }
@@ -174,8 +278,8 @@ export default function StudioCanvas({
     if (!drag) return;
     const p = toLogical(e.clientX, e.clientY);
     if (!p) return;
-    const slots = computeSlots(count, LOGICAL_W, logicalH);
-    const slot = slots[drag.index];
+    const slot = slotsRef.current[drag.index];
+    if (!slot) return;
     const img = photos[drag.index] ? cacheRef.current.get(photos[drag.index]) : undefined;
     if (!img || img.naturalWidth === 0) return;
     const adj = adjustments[drag.index] ?? { dx: 0, dy: 0, zoom: 1 };
@@ -207,7 +311,8 @@ export default function StudioCanvas({
       e.preventDefault();
       const index = selectedSlot;
       if (index < 0 || index >= count || !photos[index]) return;
-      const slots = computeSlots(count, LOGICAL_W, logicalH);
+      const slot = slotsRef.current[index];
+      if (!slot) return;
       const img = cacheRef.current.get(photos[index]);
       if (!img || img.naturalWidth === 0) return;
       const adj = adjustments[index] ?? { dx: 0, dy: 0, zoom: 1 };
@@ -219,19 +324,19 @@ export default function StudioCanvas({
           { ...adj, zoom: adj.zoom * factor },
           img.naturalWidth,
           img.naturalHeight,
-          slots[index]
+          slot
         )
       );
     };
     canvas.addEventListener('wheel', onWheel, { passive: false });
     return () => canvas.removeEventListener('wheel', onWheel);
-  }, [selectedSlot, count, photos, adjustments, onAdjust, logicalH]);
+  }, [selectedSlot, count, photos, adjustments, onAdjust, canvasW, canvasH]);
 
   return (
     <canvas
       ref={canvasRef}
       className="studio-canvas"
-      style={{ touchAction: 'none', aspectRatio: `${LOGICAL_W} / ${logicalH}` }}
+      style={{ touchAction: 'none', aspectRatio: `${canvasW} / ${canvasH}` }}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={endDrag}

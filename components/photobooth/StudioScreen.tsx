@@ -52,6 +52,8 @@ export default function StudioScreen() {
   const committedRef = useRef<string | null>(null);
   const switchSeqRef = useRef(0);
   const [frameSwitchError, setFrameSwitchError] = useState('');
+  // Error deteksi slot frame (satu foto per slot). Null = slot valid.
+  const [slotsError, setSlotsError] = useState<string | null>(null);
   const [selectedFilterId, setSelectedFilterId] = useState<string>('');
   // Settings efek yang dipilih (dari database effects).
   const [selectedEffectSettings, setSelectedEffectSettings] = useState<Effect['settings']>(DEFAULT_EFFECT_SETTINGS);
@@ -297,8 +299,15 @@ export default function StudioScreen() {
                     selectedSlot={selectedSlot}
                     onSelectSlot={setSelectedSlot}
                     onAdjust={handleAdjust}
+                    onSlotsError={setSlotsError}
                   />
                 </div>
+                {slotsError && (
+                  <div className="frame-state frame-state-error" role="alert" style={{ width: '100%' }}>
+                    <div className="frame-state-title">Frame tidak dapat dipakai</div>
+                    <p className="frame-state-desc">{slotsError}</p>
+                  </div>
+                )}
                 <div className="slot-controls" role="toolbar" aria-label="Kontrol posisi foto">
                   <div className="slot-dots">
                     {photos.map((_, i) => (

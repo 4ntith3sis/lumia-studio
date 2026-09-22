@@ -3,12 +3,14 @@ import type { ValidPhotoCount } from '@/types';
 /**
  * Phase 5 — geometri slot & konfigurasi Studio Editor.
  *
- * KETERBATASAN (didokumentasikan, bukan hasil palsu): frame adalah PNG
- * admin-upload tanpa metadata area transparan, sehingga slot dihitung
- * dari grid standar per photo_count (selaras ikon layout di
- * ChooseCountScreen): 2 → 1×2, 3 → 1×3, 4 → 2×2, 6 → 2×3.
- * Admin sebaiknya mendesain frame mengikuti grid tersebut agar
- * sejajar dengan area transparan PNG.
+ * Slot foto diselesaikan dari PNG frame aktual via
+ * `lib/photobooth/frame-slots.ts` (deteksi region transparan),
+ * sehingga layout frame apa pun (1×4, 2×2, 3×1, 2×3, …) sejajar
+ * dengan jendela foto yang sebenarnya dan tiap foto dirender
+ * tepat satu kali di slotnya.
+ *
+ * `gridForCount()` / `computeSlots()` dipertahankan HANYA untuk
+ * kasus tanpa frame (tidak ada overlay yang bisa mismatch).
  */
 
 export interface SlotRect {
