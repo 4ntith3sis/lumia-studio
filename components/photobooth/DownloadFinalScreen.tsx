@@ -182,10 +182,15 @@ export default function DownloadFinalScreen() {
 
   const handleOriginals = async () => {
     if (busy !== null || photos.length === 0) return;
+    // Jangan download jika jumlah foto capture tidak sesuai dengan yang dipilih di awal sesi.
+    if (count !== null && photos.length !== count) {
+      setCardError(`Jumlah foto belum lengkap (${photos.length} dari ${count}). Selesaikan pengambilan foto dulu.`);
+      return;
+    }
     setBusy('originals');
     setCardError('');
     try {
-      await downloadOriginals(photos);
+      await downloadOriginals(photos, count ?? undefined);
     } catch (err) {
       setCardError(err instanceof Error ? err.message : 'Download foto asli gagal.');
     } finally {
@@ -273,7 +278,7 @@ export default function DownloadFinalScreen() {
         <p className="subtitle" style={{ marginTop: '0.2rem' }}>
           {count === null
             ? 'Pilih format hasil foto yang ingin kamu simpan ke perangkatmu.'
-            : `${photos.length} dari ${count} foto · ${hasFrame ? 'dengan frame' : 'tanpa frame (frame tidak tersedia)'}`}
+            : `${photos.length} dari ${count} foto siap diunduh.`}
         </p>
       </div>
 

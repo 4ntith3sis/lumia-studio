@@ -22,8 +22,9 @@ export async function dataUrlToBlob(dataUrl: string): Promise<Blob> {
 const pad2 = (n: number) => String(n).padStart(2, '0');
 
 /** Download tiap foto asli (tanpa frame/filter/posisi) satu per satu. */
-export async function downloadOriginals(photos: string[]): Promise<void> {
-  for (let i = 0; i < photos.length; i++) {
+export async function downloadOriginals(photos: string[], targetCount?: number): Promise<void> {
+  const count = targetCount ?? photos.length;
+  for (let i = 0; i < count && i < photos.length; i++) {
     const blob = await dataUrlToBlob(photos[i]);
     const url = URL.createObjectURL(blob);
     try {
@@ -32,7 +33,7 @@ export async function downloadOriginals(photos: string[]): Promise<void> {
       // Revoke tertunda agar browser sempat memulai download.
       setTimeout(() => URL.revokeObjectURL(url), 10_000);
     }
-    if (i < photos.length - 1) {
+    if (i < count - 1) {
       await new Promise((r) => setTimeout(r, 600));
     }
   }
