@@ -295,7 +295,7 @@ export default function DownloadFinalScreen() {
 
   return (
     <AppLayout>
-      <div className="text-center">
+      <div className="text-center download-heading">
         <div className="brand-logo" style={{ justifyContent: 'center', fontSize: '1.5rem', marginBottom: '0.25rem' }}>
           lumia<span className="logo-dot">.</span>
         </div>

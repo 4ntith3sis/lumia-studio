@@ -1767,6 +1767,8 @@ a.admin-stat-card:hover {
   .studio-tab-btn { padding: 0.45rem 0.75rem; font-size: 0.8rem; }
 
   /* Download — tablet: pertahankan 3 kolom, tambah safety shrink + preview berbasis vh */
+  /* Heading download sedikit diturunkan agar komposisi lebih seimbang. */
+  .download-heading { margin-top: 12px; }
   .download-cards-grid { max-width: 900px; gap: 1rem; min-height: 0; }
   .download-card { min-height: 0; }
   .download-preview-box { height: clamp(110px, 18vh, 140px); min-height: 0; }
@@ -1961,11 +1963,15 @@ a.admin-stat-card:hover {
   .download-card {
     display: grid;
     grid-template-columns: 118px 1fr;
-    grid-template-rows: auto auto 1fr;
+    /* Spacer fleksibel atas/bawah menyeimbangkan grup konten
+       secara vertikal terhadap preview. */
+    grid-template-rows: 1fr auto auto auto 1fr;
     grid-template-areas:
+      "preview ."
       "preview title"
       "preview desc"
-      "preview button";
+      "preview button"
+      "preview .";
     align-items: center;
     column-gap: 0.6rem;
     row-gap: 0.2rem;
@@ -2041,6 +2047,8 @@ a.admin-stat-card:hover {
   .content-wrapper { gap: 0.35rem; }
   .title-primary { font-size: 1.25rem; }
   .subtitle { font-size: 0.78rem; }
+  /* Viewport pendek: heading tetap turun tapi lebih kecil agar muat. */
+  .download-heading { margin-top: 6px; }
 
   .home-illustration-container { max-width: clamp(160px, 28vh, 230px); }
   .count-icon-box { width: 44px; height: 56px; margin-top: 0.15rem; margin-bottom: 0.2rem; }
