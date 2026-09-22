@@ -1750,7 +1750,10 @@ a.admin-stat-card:hover {
   .frame-gallery { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: clamp(0.6rem, 2vw, 1rem); }
 
   /* Admin */
-  .admin-content { pa/* ─── Responsive: Mobile (≤ 767px) ─── */
+  .admin-content { padding: 0.75rem; }
+}
+
+/* ─── Responsive: Mobile (≤ 767px) ─── */
 @media (max-width: 767px) {
   .app-header { padding: 0 0.85rem; height: 3.5rem; }
   .brand-logo { font-size: 1.45rem; }
