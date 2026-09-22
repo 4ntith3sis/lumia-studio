@@ -439,7 +439,7 @@ export default function StudioScreen() {
             )}
           </div>
 
-          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginTop: 'auto', paddingTop: '1rem', borderTop: '2px solid var(--color-border-dark)' }}>
+          <div className="studio-actions-footer">
             <Link href="/hasil-foto" className="btn-secondary">
               <svg className="icon-svg" viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" strokeWidth="2.2" fill="none" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="19" y1="12" x2="5" y2="12" />
